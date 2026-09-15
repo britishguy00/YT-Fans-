@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube Fan Hub Lounge</title>
-
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background-color: #0f0f0f; color: #f1f1f1; font-family: sans-serif; display: flex; height: 100vh; width: 100vw; overflow: hidden; }
@@ -17,7 +16,6 @@
         .setup-btn { background: #ff0000; color: white; border: none; border-radius: 24px; padding: 12px; font-weight: bold; cursor: pointer; margin-top: 8px; font-size: 14px; width: 100%; }
         .setup-btn:disabled { background: #555555; color: #aaa; cursor: not-allowed; }
         .username-error { color: #ff4747; font-size: 12px; font-weight: 600; margin-top: -8px; display: none; }
-
         .sidebar { width: 260px; background-color: #212121; display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid #3d3d3d; height: 100%; }
         .channel-header { height: 56px; display: flex; align-items: center; padding: 0 16px; font-weight: bold; font-size: 18px; color: #ff0000; border-bottom: 1px solid #3d3d3d; gap: 8px; }
         .sidebar-menu { flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
@@ -48,7 +46,6 @@
         .chat-input { background: transparent; border: none; width: 100%; color: #f1f1f1; font-size: 14px; outline: none; }
     </style>
 </head>
-
 <body>
     <div id="setup-modal" class="setup-overlay">
         <div class="setup-card">
@@ -98,7 +95,7 @@
     <div class="chat-view">
         <div class="chat-header">
             <div id="active-room-title" class="chat-title">💬 General Lounge</div>
-            <div class="sub-counter">Nalish Edits Fan Community</div>
+            <div class="sub-counter">🔴 Live Server</div>
         </div>
         <div id="message-container" class="message-feed"></div>
         <div class="input-wrapper">
@@ -107,11 +104,7 @@
             </form>
         </div>
     </div>
-
     <script>
-        // ==========================================
-        // CONFIGURATION: INPUT YOUR SUPABASE DETAILS HERE
-        // ==========================================
         const SUPABASE_URL = "https://supabase.co"; 
         const SUPABASE_ANON_KEY = "your-long-sb-publishable-key";
 
@@ -139,115 +132,7 @@
                 try {
                     const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?username=ilike.${encodeURIComponent(nameInput)}&limit=1`, {
                         method: 'GET',
-                        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Accept': 'application/json' }
+                        headers: { 'apikey': sb_publishable_2GEHtwgyC3pxzdW2eEaJKw_6oe51y8M, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Accept': 'application/json' }
                     });
                     if (res.ok) {
-                        const checkData = await res.json();
-                        if (Array.isArray(checkData) && checkData.length > 0) {
-                            errorBanner.style.display = 'block';
-                            saveBtn.disabled = false;
-                            saveBtn.textContent = "Save Profile";
-                            return;
-                        }
-                    }
-                } catch(e) { console.error(e); }
-            }
-            userProfile.username = nameInput;
-            userProfile.pronouns = document.getElementById('setup-pronouns').value;
-            userProfile.avatarColor = document.getElementById('setup-avatar').value;
-            document.getElementById('identity-name').textContent = userProfile.username;
-            document.getElementById('identity-avatar').textContent = userProfile.username.charAt(0);
-            document.getElementById('identity-avatar').style.backgroundColor = userProfile.avatarColor;
-            document.getElementById('setup-modal').style.display = 'none';
-            saveBtn.disabled = false;
-            saveBtn.textContent = "Save Profile";
-            if (isFirstTime) { isFirstTime = false; startLiveSync(); }
-        });
-
-        document.getElementById('profile-footer').addEventListener('click', () => {
-            document.getElementById('modal-title').textContent = "Update Your Profile";
-            document.getElementById('setup-username').value = userProfile.username;
-            document.getElementById('setup-pronouns').value = userProfile.pronouns;
-            document.getElementById('setup-avatar').value = userProfile.avatarColor;
-            document.getElementById('error-banner').style.display = 'none';
-            document.getElementById('setup-modal').style.display = 'flex';
-        });
-
-        function appendMessage(user, text, pronouns, avatarColor, timestamp = new Date()) {
-            const msgDiv = document.createElement('div');
-            msgDiv.className = "msg-box";
-            const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const displayPronoun = (pronouns && pronouns !== 'none') ? `<span class="msg-pronouns">${pronouns}</span>` : '';
-            msgDiv.innerHTML = `
-                <div class="avatar" style="background-color: ${avatarColor || '#383838'}">${user.charAt(0)}</div>
-                <div class="msg-info">
-                    <div class="msg-meta">
-                        <span class="msg-user">${user}</span>
-                        ${displayPronoun}
-                        <span class="msg-time">${time}</span>
-                    </div>
-                    <p class="msg-text">${text}</p>
-                </div>
-            `;
-            messageContainer.appendChild(msgDiv);
-            messageContainer.scrollTop = messageContainer.scrollHeight;
-        }
-
-        function logSystem(text) {
-            const div = document.createElement('div');
-            div.style.cssText = "font-size: 12px; color: #aaa; background: #212121; padding: 10px; border-radius: 8px; border: 1px solid #3d3d3d; font-style: italic; width: 100%;";
-            div.textContent = `⚙️ Server: ${text}`;
-            messageContainer.appendChild(div);
-            messageContainer.scrollTop = messageContainer.scrollHeight;
-        }
-
-        async function fetchHistory() {
-            if (SUPABASE_URL.includes("your-project-id")) return;
-            try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?channel=eq.${currentChannel}&order=created_at.asc&limit=50`, {
-                    method: 'GET',
-                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
-                });
-                const data = await res.json();
-                messageContainer.innerHTML = '';
-                if (data && data.length > 0) {
-                    data.forEach(msg => appendMessage(msg.username, msg.content, msg.pronouns, msg.avatar_color, msg.created_at));
-                } else {
-                    logSystem(`Welcome to #${currentChannel}! No history logged here yet.`);
-                }
-            } catch (err) { console.error(err); }
-        }
-
-        messageForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const text = messageInput.value.trim();
-            if (!text) return;
-            messageInput.value = '';
-            appendMessage(userProfile.username, text, userProfile.pronouns, userProfile.avatarColor);
-            try {
-                await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
-                    method: 'POST',
-                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: userProfile.username, content: text, channel: currentChannel, pronouns: userProfile.pronouns, avatar_color: userProfile.avatarColor })
-                });
-            } catch (err) { logSystem("Sync issue."); }
-        });
-
-        window.switchChannel = function(targetChannel, element) {
-            if(currentChannel === targetChannel) return;
-            currentChannel = targetChannel;
-            document.getElementById('active-room-title').innerHTML = element.innerHTML;
-            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
-            messageContainer.innerHTML = '';
-            fetchHistory();
-        }
-
-        function startLiveSync() {
-            fetchHistory();
-            if(synchronizationLoop) clearInterval(synchronizationLoop);
-            synchronizationLoop = setInterval(fetchHistory, 3000);
-        }
-    </script>
-</body>
-</html>
+const checkData = await res.json();if (Array.isArray(checkData) && checkData.length > 0) {errorBanner.style.display = 'block';saveBtn.disabled = false;saveBtn.textContent = "Save Profile";return;}}} catch(e) { console.error(e); }}userProfile.username = nameInput;userProfile.pronouns = document.getElementById('setup-pronouns').value;userProfile.avatarColor = document.getElementById('setup-avatar').value;document.getElementById('identity-name').textContent = userProfile.username;document.getElementById('identity-avatar').textContent = userProfile.username.charAt(0);document.getElementById('identity-avatar').style.backgroundColor = userProfile.avatarColor;document.getElementById('setup-modal').style.display = 'none';saveBtn.disabled = false;saveBtn.textContent = "Save Profile";if (isFirstTime) { isFirstTime = false; startLiveSync(); }});document.getElementById('profile-footer').addEventListener('click', () => {document.getElementById('modal-title').textContent = "Update Your Profile";document.getElementById('setup-username').value = userProfile.username;document.getElementById('setup-pronouns').value = userProfile.pronouns;document.getElementById('setup-avatar').value = userProfile.avatarColor;document.getElementById('error-banner').style.display = 'none';document.getElementById('setup-modal').style.display = 'flex';});function appendMessage(user, text, pronouns, avatarColor, timestamp = new Date()) {const msgDiv = document.createElement('div');msgDiv.className = "msg-box";const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });const displayPronoun = (pronouns && pronouns !== 'none') ? <span class="msg-pronouns">${pronouns}</span> : '';msgDiv.innerHTML = <div class="avatar" style="background-color: ${avatarColor || '#383838'}">${user.charAt(0)}</div> <div class="msg-info"> <div class="msg-meta"> <span class="msg-user">${user}</span> ${displayPronoun} <span class="msg-time">${time}</span> </div> <p class="msg-text">${text}</p> </div>;messageContainer.appendChild(msgDiv);messageContainer.scrollTop = messageContainer.scrollHeight;}function logSystem(text) {const div = document.createElement('div');div.style.cssText = "font-size: 12px; color: #aaa; background: #212121; padding: 10px; border-radius: 8px; border: 1px solid #3d3d3d; font-style: italic; width: 100%;";div.textContent = ⚙️ Server: ${text};messageContainer.appendChild(div);messageContainer.scrollTop = messageContainer.scrollHeight;}async function fetchHistory() {if (SUPABASE_URL.includes("your-project-id")) return;try {const res = await fetch(${SUPABASE_URL}/rest/v1/messages?channel=eq.${currentChannel}&order=created_at.asc&limit=50, {method: 'GET',headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': Bearer ${SUPABASE_ANON_KEY} }});const data = await res.json();messageContainer.innerHTML = '';if (data && data.length > 0) {data.forEach(msg => appendMessage(msg.username, msg.content, msg.pronouns, msg.avatar_color, msg.created_at));} else {logSystem(Welcome to #${currentChannel}! No history logged here yet.);}} catch (err) { console.error(err); }}messageForm.addEventListener('submit', async (e) => {e.preventDefault();const text = messageInput.value.trim();if (!text) return;messageInput.value = '';appendMessage(userProfile.username, text, userProfile.pronouns, userProfile.avatarColor);try {await fetch(${SUPABASE_URL}/rest/v1/messages, {method: 'POST',headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': Bearer ${SUPABASE_ANON_KEY}, 'Content-Type': 'application/json' },body: JSON.stringify({ username: userProfile.username, content: text, channel: currentChannel, pronouns: userProfile.pronouns, avatar_color: userProfile.avatarColor })});} catch (err) { logSystem("Sync issue."); }});window.switchChannel = function(targetChannel, element) {if(currentChannel === targetChannel) return;currentChannel = targetChannel;document.getElementById('active-room-title').innerHTML = element.innerHTML;document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));element.classList.add('active');messageContainer.innerHTML = '';fetchHistory();}function startLiveSync() {fetchHistory();if(synchronizationLoop) clearInterval(synchronizationLoop);synchronizationLoop = setInterval(fetchHistory, 3000);}
