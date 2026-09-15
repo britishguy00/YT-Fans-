@@ -35,7 +35,8 @@
         .msg-pronouns { font-size: 11px; color: #ff4747; background: rgba(255,71,71,0.1); padding: 1px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
         .msg-time { font-size: 11px; color: #aaa; }
         .msg-text { color: #f1f1f1; font-size: 14px; margin: 4px 0 0 0; line-height: 1.4; word-break: break-word; white-space: pre-wrap; }
-        .footer { height: 60px; background-color: #1a1a1a; display: flex; align-items: center; padding: 0 12px; gap: 12px; border-top: 1px solid #3d3d3d; font-size: 13px; }
+        .footer { height: 60px; background-color: #1a1a1a; display: flex; align-items: center; padding: 0 12px; gap: 12px; border-top: 1px solid #3d3d3d; font-size: 13px; cursor: pointer; transition: background 0.2s; }
+        .footer:hover { background-color: #2b2b2b; }
         .footer-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; flex-shrink: 0; text-transform: uppercase; }
         .footer-info { overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
         .footer-name { color: white; margin: 0; font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
@@ -49,10 +50,9 @@
 
 <body>
 
-    <!-- SETUP PROFILE SCREEN MODAL -->
     <div id="setup-modal" class="setup-overlay">
         <div class="setup-card">
-            <h2 class="setup-title">Setup Your Fan Profile</h2>
+            <h2 id="modal-title" class="setup-title">Setup Your Fan Profile</h2>
             <div class="form-group">
                 <label>Choose Username</label>
                 <input type="text" id="setup-username" class="setup-input" placeholder="GamerX..." autocomplete="off">
@@ -75,11 +75,10 @@
                     <option value="#a855f7">Purple</option>
                 </select>
             </div>
-            <button id="enter-hub-btn" class="setup-btn">Enter Fan Lounge</button>
+            <button id="enter-hub-btn" class="setup-btn">Save Profile</button>
         </div>
     </div>
 
-    <!-- SIDEBAR CHANNELS PANELS -->
     <div class="sidebar">
         <div class="channel-header">▶ Fan Club Hub</div>
         <div class="sidebar-menu">
@@ -88,20 +87,19 @@
             <div class="menu-item" onclick="switchChannel('suggestions', this)">🎬 Video Ideas</div>
             <div class="menu-item" onclick="switchChannel('gaming', this)">🎮 Gaming Corner</div>
         </div>
-        <div class="footer">
+        <div id="profile-footer" class="footer">
             ?</div>
             <div class="footer-info">
                 Guest</p>
-                User Profile</p>
+                Click to Edit Profile</p>
             </div>
         </div>
     </div>
 
-    <!-- MAIN CHAT INTERFACE WINDOW -->
     <div class="chat-view">
         <div class="chat-header">
             <div id="active-room-title" class="chat-title">💬 General Lounge</div>
-            <div class="sub-counter"> Nalish Edits Community </div>
+            <div class="sub-counter">Nalish Edits Community</div>
         </div>
         <div id="message-container" class="message-feed"></div>
         <div class="input-wrapper">
@@ -126,6 +124,7 @@
         let currentChannel = "general";
         let userProfile = { username: "", pronouns: "", avatarColor: "#5865f2" };
         let synchronizationLoop = null;
+        let isFirstTime = true;
 
         document.getElementById('enter-hub-btn').addEventListener('click', () => {
             const nameInput = document.getElementById('setup-username').value.trim();
@@ -138,11 +137,22 @@
             userProfile.avatarColor = document.getElementById('setup-avatar').value;
             
             document.getElementById('identity-name').textContent = userProfile.username;
-            document.getElementById('identity-pronouns').textContent = userProfile.pronouns !== 'none' ? userProfile.pronouns : 'Fan';
             document.getElementById('identity-avatar').textContent = userProfile.username.charAt(0);
             document.getElementById('identity-avatar').style.backgroundColor = userProfile.avatarColor;
             document.getElementById('setup-modal').style.display = 'none';
-            startLiveSync();
+            
+            if (isFirstTime) {
+                isFirstTime = false;
+                startLiveSync();
+            }
+        });
+
+        document.getElementById('profile-footer').addEventListener('click', () => {
+            document.getElementById('modal-title').textContent = "Update Your Profile";
+            document.getElementById('setup-username').value = userProfile.username;
+            document.getElementById('setup-pronouns').value = userProfile.pronouns;
+            document.getElementById('setup-avatar').value = userProfile.avatarColor;
+            document.getElementById('setup-modal').style.display = 'flex';
         });
 
 
