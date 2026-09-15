@@ -10,12 +10,14 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background-color: #0f0f0f; color: #f1f1f1; font-family: sans-serif; display: flex; height: 100vh; width: 100vw; overflow: hidden; }
         .setup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,15,15,0.95); display: flex; align-items: center; justify-content: center; z-index: 999; }
-        .setup-card { background: #212121; border: 1px solid #3d3d3d; border-radius: 16px; padding: 32px; width: 360px; display: flex; flex-direction: column; gap: 16px; }
+        .setup-card { background: #212121; border: 1px solid #3d3d3d; border-radius: 16px; padding: 32px; width: 360px; display: flex; flex-direction: column; gap: 16px; position: relative; }
         .setup-title { font-size: 20px; font-weight: bold; color: #ff0000; text-align: center; margin-bottom: 8px; }
         .form-group { display: flex; flex-direction: column; gap: 6px; }
         .form-group label { font-size: 12px; color: #aaa; font-weight: 600; text-transform: uppercase; }
         .setup-input, .setup-select { background: #0f0f0f; border: 1px solid #3d3d3d; border-radius: 8px; padding: 10px 12px; color: white; outline: none; font-size: 14px; width: 100%; }
         .setup-btn { background: #ff0000; color: white; border: none; border-radius: 24px; padding: 12px; font-weight: bold; cursor: pointer; margin-top: 8px; font-size: 14px; width: 100%; }
+        .setup-btn:disabled { background: #555555; color: #aaa; cursor: not-allowed; }
+        .username-error { color: #ff4747; font-size: 12px; font-weight: 600; margin-top: -8px; display: none; }
         .sidebar { width: 260px; background-color: #212121; display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid #3d3d3d; height: 100%; }
         .channel-header { height: 56px; display: flex; align-items: center; padding: 0 16px; font-weight: bold; font-size: 18px; color: #ff0000; border-bottom: 1px solid #3d3d3d; gap: 8px; }
         .sidebar-menu { flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
@@ -32,7 +34,7 @@
         .msg-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
         .msg-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .msg-user { font-weight: 600; color: #fff; font-size: 14px; }
-        .msg-pronouns { font-size: 11px; color: #ff4747; background: rgba(255,71,71,0.1); padding: 1px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
+        .msg-pronouns { font-size: 11px; color: #ff4747; background: rgba(255, 71, 71, 0.1); padding: 1px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
         .msg-time { font-size: 11px; color: #aaa; }
         .msg-text { color: #f1f1f1; font-size: 14px; margin: 4px 0 0 0; line-height: 1.4; word-break: break-word; white-space: pre-wrap; }
         .footer { height: 60px; background-color: #1a1a1a; display: flex; align-items: center; padding: 0 12px; gap: 12px; border-top: 1px solid #3d3d3d; font-size: 13px; cursor: pointer; transition: background 0.2s; }
@@ -50,6 +52,7 @@
 
 <body>
 
+    <!-- SETUP PROFILE SCREEN WITH WARNING MESSAGE FIELD -->
     <div id="setup-modal" class="setup-overlay">
         <div class="setup-card">
             <h2 id="modal-title" class="setup-title">Setup Your Fan Profile</h2>
@@ -57,6 +60,9 @@
                 <label>Choose Username</label>
                 <input type="text" id="setup-username" class="setup-input" placeholder="GamerX..." autocomplete="off">
             </div>
+            <!-- Dynamic hidden warning element label -->
+            <p id="error-banner" class="username-error">⚠️ This name is taken by another fan!</p>
+            
             <div class="form-group">
                 <label>Select Pronouns</label>
                 <select id="setup-pronouns" class="setup-select">
@@ -79,6 +85,7 @@
         </div>
     </div>
 
+    <!-- SIDEBAR CHANNELS PANELS -->
     <div class="sidebar">
         <div class="channel-header">▶ Fan Club Hub</div>
         <div class="sidebar-menu">
@@ -96,10 +103,11 @@
         </div>
     </div>
 
+    <!-- MAIN CHAT INTERFACE WINDOW -->
     <div class="chat-view">
         <div class="chat-header">
             <div id="active-room-title" class="chat-title">💬 General Lounge</div>
-            <div class="sub-counter">Nalish Edits Community</div>
+            <div class="sub-counter">Nalish Edits Fan Community</div>
         </div>
         <div id="message-container" class="message-feed"></div>
         <div class="input-wrapper">
@@ -115,7 +123,7 @@
         // CONFIGURATION: INPUT YOUR SUPABASE DETAILS HERE
         // ==========================================
         const SUPABASE_URL = "https://supabase.co"; 
-        const SUPABASE_ANON_KEY = "sb_publishable_2GEHtwgyC3pxzdW2eEaJKw_6oe51y8M";
+        const SUPABASE_ANON_KEY = "your-long-sb-publishable-key";
 
         const messageContainer = document.getElementById('message-container');
         const messageForm = document.getElementById('message-form');
@@ -126,12 +134,42 @@
         let synchronizationLoop = null;
         let isFirstTime = true;
 
-        document.getElementById('enter-hub-btn').addEventListener('click', () => {
+        // FIXED ACTION: Validates whether name resides anywhere within past database logs
+        document.getElementById('enter-hub-btn').addEventListener('click', async () => {
             const nameInput = document.getElementById('setup-username').value.trim();
+            const errorBanner = document.getElementById('error-banner');
+            const saveBtn = document.getElementById('enter-hub-btn');
+            
             if(!nameInput) {
                 alert("Please input a valid username!");
                 return;
             }
+
+            // Hide previous error, disable button while checking database
+            errorBanner.style.display = 'none';
+            saveBtn.disabled = true;
+            saveBtn.textContent = "Checking name...";
+
+            // Check if username already exists in your Supabase logs table
+            if (!SUPABASE_URL.includes("your-project-id") && nameInput.toLowerCase() !== userProfile.username.toLowerCase()) {
+                try {
+                    const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?username=eq.${encodeURIComponent(nameInput)}&limit=1`, {
+                        method: 'GET',
+                        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
+                    });
+                    const checkData = await res.json();
+                    
+                    // If name returns an existing message row, halt entry flow
+                    if (checkData && checkData.length > 0) {
+                        errorBanner.style.display = 'block';
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = "Save Profile";
+                        return;
+                    }
+                } catch(e) { console.error(e); }
+            }
+
+            // If name is clear, proceed to log in the profile user
             userProfile.username = nameInput;
             userProfile.pronouns = document.getElementById('setup-pronouns').value;
             userProfile.avatarColor = document.getElementById('setup-avatar').value;
@@ -141,6 +179,9 @@
             document.getElementById('identity-avatar').style.backgroundColor = userProfile.avatarColor;
             document.getElementById('setup-modal').style.display = 'none';
             
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Save Profile";
+
             if (isFirstTime) {
                 isFirstTime = false;
                 startLiveSync();
@@ -152,6 +193,7 @@
             document.getElementById('setup-username').value = userProfile.username;
             document.getElementById('setup-pronouns').value = userProfile.pronouns;
             document.getElementById('setup-avatar').value = userProfile.avatarColor;
+            document.getElementById('error-banner').style.display = 'none';
             document.getElementById('setup-modal').style.display = 'flex';
         });
 
@@ -235,5 +277,3 @@
     </script>
 </body>
 </html>
-
-
