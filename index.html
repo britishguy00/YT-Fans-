@@ -4,61 +4,117 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube Fan Hub Lounge</title>
+
+
     <style>
-        body { background-color: #0f0f0f; color: #f1f1f1; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        .sidebar { width: 260px; background-color: #212121; display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid #3d3d3d; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #0f0f0f; color: #f1f1f1; font-family: sans-serif; display: flex; height: 100vh; width: 100vw; overflow: hidden; }
+        .setup-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,15,15,0.95); display: flex; align-items: center; justify-content: center; z-index: 999; }
+        .setup-card { background: #212121; border: 1px solid #3d3d3d; border-radius: 16px; padding: 32px; width: 360px; display: flex; flex-direction: column; gap: 16px; }
+        .setup-title { font-size: 20px; font-weight: bold; color: #ff0000; text-align: center; margin-bottom: 8px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 12px; color: #aaa; font-weight: 600; text-transform: uppercase; }
+        .setup-input, .setup-select { background: #0f0f0f; border: 1px solid #3d3d3d; border-radius: 8px; padding: 10px 12px; color: white; outline: none; font-size: 14px; width: 100%; }
+        .setup-btn { background: #ff0000; color: white; border: none; border-radius: 24px; padding: 12px; font-weight: bold; cursor: pointer; margin-top: 8px; font-size: 14px; width: 100%; }
+        .sidebar { width: 260px; background-color: #212121; display: flex; flex-direction: column; flex-shrink: 0; border-right: 1px solid #3d3d3d; height: 100%; }
         .channel-header { height: 56px; display: flex; align-items: center; padding: 0 16px; font-weight: bold; font-size: 18px; color: #ff0000; border-bottom: 1px solid #3d3d3d; gap: 8px; }
-        .yt-logo { font-size: 22px; }
-        .sidebar-menu { flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 4px; }
-        .menu-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+        .sidebar-menu { flex: 1; padding: 12px 8px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+        .menu-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; color: #aaa; }
         .menu-item.active { background-color: #ff0000; color: white; }
-        .menu-item:hover:not(.active) { background-color: #383838; }
-        .chat-view { flex: 1; display: flex; flex-direction: column; background-color: #0f0f0f; }
+        .menu-item:hover:not(.active) { background-color: #383838; color: white; }
+        .chat-view { flex: 1; display: flex; flex-direction: column; background-color: #0f0f0f; min-width: 0; height: 100%; }
         .chat-header { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; border-bottom: 1px solid #3d3d3d; background-color: #212121; }
         .chat-title { font-weight: 600; font-size: 16px; }
         .sub-counter { font-size: 12px; color: #aaa; background: #383838; padding: 4px 10px; border-radius: 12px; font-weight: bold; }
-        .message-feed { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
-        .msg-box { display: flex; gap: 16px; }
-        .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0; font-size: 14px; }
-        .msg-info { display: flex; flex-direction: column; }
-        .msg-meta { display: flex; align-items: baseline; gap: 8px; }
+        .message-feed { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; width: 100%; }
+        .msg-box { display: flex; gap: 16px; align-items: flex-start; width: 100%; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; flex-shrink: 0; font-size: 16px; text-transform: uppercase; border: 2px solid rgba(255,255,255,0.1); }
+        .msg-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+        .msg-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .msg-user { font-weight: 600; color: #fff; font-size: 14px; }
-        .msg-badge { font-size: 10px; background-color: #ff0000; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .msg-pronouns { font-size: 11px; color: #ff4747; background: rgba(255,71,71,0.1); padding: 1px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
         .msg-time { font-size: 11px; color: #aaa; }
-        .msg-text { color: #f1f1f1; font-size: 14px; margin: 6px 0 0 0; line-height: 1.4; }
-        .input-wrapper { padding: 24px; padding-top: 0; }
-        .chat-form { background-color: #212121; border: 1px solid #3d3d3d; border-radius: 24px; padding: 12px 20px; display: flex; }
+        .msg-text { color: #f1f1f1; font-size: 14px; margin: 4px 0 0 0; line-height: 1.4; word-break: break-word; white-space: pre-wrap; }
+        .footer { height: 60px; background-color: #1a1a1a; display: flex; align-items: center; padding: 0 12px; gap: 12px; border-top: 1px solid #3d3d3d; font-size: 13px; }
+        .footer-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; flex-shrink: 0; text-transform: uppercase; }
+        .footer-info { overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+        .footer-name { color: white; margin: 0; font-weight: 600; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+        .footer-pronouns { color: #aaa; font-size: 11px; margin: 0; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+        .input-wrapper { padding: 24px; padding-top: 0; width: 100%; }
+        .chat-form { background-color: #212121; border: 1px solid #3d3d3d; border-radius: 24px; padding: 12px 20px; display: flex; width: 100%; }
         .chat-input { background: transparent; border: none; width: 100%; color: #f1f1f1; font-size: 14px; outline: none; }
-        .chat-input::placeholder { color: #aaa; }
     </style>
 </head>
+
+
 <body>
 
-    <div class="sidebar">
-        <div class="channel-header"><span class="yt-logo">▶</span> Creator Hub</div>
-        <div class="sidebar-menu">
-            <div class="menu-item active">💬 Live Fan Chat</div>
+    <!-- SETUP PROFILE SCREEN MODAL -->
+    <div id="setup-modal" class="setup-overlay">
+        <div class="setup-card">
+            <h2 class="setup-title">Setup Your Fan Profile</h2>
+            <div class="form-group">
+                <label>Choose Username</label>
+                <input type="text" id="setup-username" class="setup-input" placeholder="GamerX..." autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>Select Pronouns</label>
+                <select id="setup-pronouns" class="setup-select">
+                    <option value="he/him">he/him</option>
+                    <option value="she/her">she/her</option>
+                    <option value="they/them">they/them</option>
+                    <option value="none">Prefer not to say</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Select Avatar Color</label>
+                <select id="setup-avatar" class="setup-select">
+                    <option value="#5865f2">Blue</option>
+                    <option value="#ff0000">Crimson</option>
+                    <option value="#10b981">Green</option>
+                    <option value="#a855f7">Purple</option>
+                </select>
+            </div>
+            <button id="enter-hub-btn" class="setup-btn">Enter Fan Lounge</button>
         </div>
     </div>
 
+    <!-- SIDEBAR CHANNELS PANELS -->
+    <div class="sidebar">
+        <div class="channel-header">▶ Fan Club Hub</div>
+        <div class="sidebar-menu">
+            <div class="menu-item active" onclick="switchChannel('general', this)">💬 General Lounge</div>
+            <div class="menu-item" onclick="switchChannel('announcements', this)">📢 Announcements</div>
+            <div class="menu-item" onclick="switchChannel('suggestions', this)">🎬 Video Ideas</div>
+            <div class="menu-item" onclick="switchChannel('gaming', this)">🎮 Gaming Corner</div>
+        </div>
+        <div class="footer">
+            ?</div>
+            <div class="footer-info">
+                Guest</p>
+                User Profile</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN CHAT INTERFACE WINDOW -->
     <div class="chat-view">
         <div class="chat-header">
-            <div class="chat-title">💬 Live Fan Chat</div>
-            <div class="sub-counter">🔴 Global Fan Lounge</div>
+            <div id="active-room-title" class="chat-title">💬 General Lounge</div>
+            <div class="sub-counter"> Nalish Edits Community </div>
         </div>
-        
         <div id="message-container" class="message-feed"></div>
-
         <div class="input-wrapper">
             <form id="message-form" class="chat-form">
-                <input id="message-input" type="text" autocomplete="off" placeholder="Send a message to the stream crew..." class="chat-input">
+                <input id="message-input" type="text" autocomplete="off" placeholder="Send a message..." class="chat-input">
             </form>
         </div>
     </div>
 
+
     <script>
         // ==========================================
-        // CONFIGURATION: PUT YOUR CORRECT CRDENTIALS HERE!
+        // CONFIGURATION: INPUT YOUR SUPABASE DETAILS HERE
         // ==========================================
         const SUPABASE_URL = "https://supabase.co"; 
         const SUPABASE_ANON_KEY = "sb_publishable_2GEHtwgyC3pxzdW2eEaJKw_6oe51y8M";
@@ -66,21 +122,42 @@
         const messageContainer = document.getElementById('message-container');
         const messageForm = document.getElementById('message-form');
         const messageInput = document.getElementById('message-input');
+        
+        let currentChannel = "general";
+        let userProfile = { username: "", pronouns: "", avatarColor: "#5865f2" };
+        let synchronizationLoop = null;
 
-        const randomID = Math.floor(100 + Math.random() * 900);
-        const myUsername = "Fan_" + randomID;
+        document.getElementById('enter-hub-btn').addEventListener('click', () => {
+            const nameInput = document.getElementById('setup-username').value.trim();
+            if(!nameInput) {
+                alert("Please input a valid username!");
+                return;
+            }
+            userProfile.username = nameInput;
+            userProfile.pronouns = document.getElementById('setup-pronouns').value;
+            userProfile.avatarColor = document.getElementById('setup-avatar').value;
+            
+            document.getElementById('identity-name').textContent = userProfile.username;
+            document.getElementById('identity-pronouns').textContent = userProfile.pronouns !== 'none' ? userProfile.pronouns : 'Fan';
+            document.getElementById('identity-avatar').textContent = userProfile.username.charAt(0);
+            document.getElementById('identity-avatar').style.backgroundColor = userProfile.avatarColor;
+            document.getElementById('setup-modal').style.display = 'none';
+            startLiveSync();
+        });
 
-        function appendMessage(user, text, timestamp = new Date()) {
+
+        function appendMessage(user, text, pronouns, avatarColor, timestamp = new Date()) {
             const msgDiv = document.createElement('div');
             msgDiv.className = "msg-box";
             const time = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const avatarColor = user === myUsername ? "#10b981" : "#0284c7";
+            const displayPronoun = (pronouns && pronouns !== 'none') ? `<span class="msg-pronouns">${pronouns}</span>` : '';
 
             msgDiv.innerHTML = `
-                <div class="avatar" style="background-color: ${avatarColor}">${user.charAt(0).toUpperCase()}</div>
+                <div class="avatar" style="background-color: ${avatarColor || '#383838'}">${user.charAt(0)}</div>
                 <div class="msg-info">
                     <div class="msg-meta">
                         <span class="msg-user">${user}</span>
+                        ${displayPronoun}
                         <span class="msg-time">${time}</span>
                     </div>
                     <p class="msg-text">${text}</p>
@@ -92,54 +169,61 @@
 
         function logSystem(text) {
             const div = document.createElement('div');
-            div.style.cssText = "font-size: 12px; color: #aaa; background: #212121; padding: 8px; border-radius: 8px; border: 1px solid #3d3d3d; font-style: italic;";
-            div.textContent = `⚙️ ${text}`;
+            div.style.cssText = "font-size: 12px; color: #aaa; background: #212121; padding: 10px; border-radius: 8px; border: 1px solid #3d3d3d; font-style: italic; width: 100%;";
+            div.textContent = `⚙️ Server: ${text}`;
             messageContainer.appendChild(div);
             messageContainer.scrollTop = messageContainer.scrollHeight;
         }
 
         async function fetchHistory() {
+            if (SUPABASE_URL.includes("your-project-id")) return;
             try {
-                const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?order=created_at.asc&limit=50`, {
+                const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?channel=eq.${currentChannel}&order=created_at.asc&limit=50`, {
                     method: 'GET',
                     headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
                 });
                 const data = await res.json();
                 messageContainer.innerHTML = '';
                 if (data && data.length > 0) {
-                    data.forEach(msg => appendMessage(msg.username, msg.content, msg.created_at));
+                    data.forEach(msg => appendMessage(msg.username, msg.content, msg.pronouns, msg.avatar_color, msg.created_at));
+                } else {
+                    logSystem(`Welcome to #${currentChannel}! No history logged here yet.`);
                 }
-                logSystem("Live Chat Connected!");
-            } catch (err) {
-                logSystem("Connecting...");
-            }
+            } catch (err) { console.error(err); }
         }
 
         messageForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const text = messageInput.value.trim();
             if (!text) return;
-
             messageInput.value = '';
-            appendMessage(myUsername, text);
-
+            appendMessage(userProfile.username, text, userProfile.pronouns, userProfile.avatarColor);
             try {
                 await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
                     method: 'POST',
-                    headers: {
-                        'apikey': SUPABASE_ANON_KEY,
-                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ username: myUsername, content: text })
+                    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: userProfile.username, content: text, channel: currentChannel, pronouns: userProfile.pronouns, avatar_color: userProfile.avatarColor })
                 });
-            } catch (err) {
-                logSystem("Failed to sync message.");
-            }
+            } catch (err) { logSystem("Sync issue."); }
         });
 
-        fetchHistory();
-        setInterval(fetchHistory, 3000); // Polls database every 3 seconds for new global messages
+        window.switchChannel = function(targetChannel, element) {
+            if(currentChannel === targetChannel) return;
+            currentChannel = targetChannel;
+            document.getElementById('active-room-title').innerHTML = element.innerHTML;
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+            messageContainer.innerHTML = '';
+            fetchHistory();
+        }
+
+        function startLiveSync() {
+            fetchHistory();
+            if(synchronizationLoop) clearInterval(synchronizationLoop);
+            synchronizationLoop = setInterval(fetchHistory, 3000);
+        }
     </script>
 </body>
 </html>
+
+
